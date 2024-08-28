@@ -7,7 +7,7 @@ permissions:
 jobs:
   build:
     name: "snapshots - ${{ matrix.build_env.target}}/${{ matrix.build_env.subtarget}} build"
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     strategy:
       matrix:
         build_env:
@@ -45,11 +45,14 @@ jobs:
         with:
           repository: openwrt/openwrt
           fetch-depth: 0
+          path: openwrt
 
       - name: Checkout snapshot commit in openwrt repo  
+        working-directory: ./openwrt 
         run: git checkout ${{ env.SNAPSHOT_COMMIT_SHA}}
   
       - name: Building toolchain and kernel
+        working-directory: ./openwrt 
         run: |
           echo "pkgarch: ${{ env.DEVICE_ARCH}}, target:${{ matrix.build_env.target}}, subtarget: ${{ matrix.build_env.subtarget}}"
 
@@ -80,6 +83,7 @@ jobs:
           make target/linux/compile  -i -j `nproc` V=s
 
       - name: Build AmneziaWG
+        working-directory: ./openwrt 
         run: |
           # Ignore kmod build for some targets, replace with the awg-go
           make package/kmod-amneziawg/{clean,download,prepare} V=s || true
@@ -93,11 +97,10 @@ jobs:
 
       - name: Prepare artifacts
         run: |
-          mkdir -p awgrelease
           postfix="${{ env.SNAPSHOT_COMMIT_SHA}}_${{ env.DEVICE_ARCH}}_${{ matrix.build_env.target}}_${{ matrix.build_env.subtarget}}"
-          cp bin/packages/${{ env.DEVICE_ARCH }}/awgopenwrt/amneziawg-tools_*.ipk awg-openwrt/amneziawg-tools_${postfix}.ipk
-          cp bin/packages/${{ env.DEVICE_ARCH }}/awgopenwrt/luci-proto-amneziawg_*.ipk awg-openwrt/luci-proto-amneziawg_${postfix}.ipk
-          cp bin/targets/${{ matrix.build_env.target}}/${{ matrix.build_env.subtarget}}/packages/kmod-amneziawg_*.ipk awg-openwrt/kmod-amneziawg_${postfix}.ipk
+          cp openwrt/bin/packages/${{ env.DEVICE_ARCH }}/awgopenwrt/amneziawg-tools_*.ipk awg-openwrt/amneziawg-tools_${postfix}.ipk
+          cp openwrt/bin/packages/${{ env.DEVICE_ARCH }}/awgopenwrt/luci-proto-amneziawg_*.ipk awg-openwrt/luci-proto-amneziawg_${postfix}.ipk
+          cp openwrt/bin/targets/${{ matrix.build_env.target}}/${{ matrix.build_env.subtarget}}/packages/kmod-amneziawg_*.ipk awg-openwrt/kmod-amneziawg_${postfix}.ipk
 
       - name: Publish tag
         working-directory: ./awg-openwrt
