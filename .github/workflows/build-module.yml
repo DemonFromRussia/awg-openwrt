@@ -11,20 +11,24 @@ jobs:
           - pkgarch: aarch64_cortex-a53
             target: mediatek
             subtarget: filogic
-            commit: "ebe7c5f1a3"
-
     steps:
+      - name: Get kernel commit SHA
+        run: |
+          KERNEL_COMMIT_SHA=$(wget -q https://downloads.openwrt.org/snapshots/targets/${{ matrix.build_env.target}}/${{ matrix.build_env.subtarget}}/profiles.json -O- | tr ',' '\n' | grep "version_code"| awk -F: '{print $2}' | tr -d '"' | awk -F- '{print $2}')
+          echo "Kernel commit sha: $KERNEL_COMMIT_SHA"
+          echo "KERNEL_COMMIT_SHA=$KERNEL_COMMIT_SHA" >> $GITHUB_ENV
+
       - uses: actions/checkout@v4
         with:
           repository: openwrt/openwrt
           fetch-depth: 0
-      - run: git checkout ${{ matrix.build_env.commit}}
+      - run: git checkout ${{ env.KERNEL_COMMIT_SHA}}
 
       - name: Cache Tools and Kernel
         id: cache-tools-kernel
         uses: actions/cache@v4
         env:
-          cache-name: "cache-tools-kernel-${{ matrix.build_env.commit}}-${{ matrix.build_env.pkgarch}}-${{ matrix.build_env.target}}-${{ matrix.build_env.subtarget}}"
+          cache-name: "cache-tools-kernel-${{ env.KERNEL_COMMIT_SHA}}-${{ matrix.build_env.pkgarch}}-${{ matrix.build_env.target}}-${{ matrix.build_env.subtarget}}"
         with:
           path: "**"
           key: ${{ runner.os }}-build-vm4-${{ env.cache-name }}
@@ -77,7 +81,7 @@ jobs:
       - name: Prepare artifacts
         run: |
           mkdir -p awgrelease
-          postfix="${{ matrix.build_env.commit}}_${{ matrix.build_env.commit}}_${{ matrix.build_env.pkgarch}}_${{ matrix.build_env.target}}_${{ matrix.build_env.subtarget}}"
+          postfix="${{ env.KERNEL_COMMIT_SHA}}}_${{ matrix.build_env.pkgarch}}_${{ matrix.build_env.target}}_${{ matrix.build_env.subtarget}}"
           cp bin/packages/${{ matrix.build_env.pkgarch }}/awgopenwrt/amneziawg-tools_*.ipk awgrelease/amneziawg-tools_${postfix}.ipk
           cp bin/packages/${{ matrix.build_env.pkgarch }}/awgopenwrt/luci-app-amneziawg_*.ipk awgrelease/luci-app-amneziawg_${postfix}.ipk
           cp bin/targets/${{ matrix.build_env.target}}/${{ matrix.build_env.subtarget}}/packages/kmod-amneziawg_*.ipk awgrelease/kmod-amneziawg_${postfix}.ipk
