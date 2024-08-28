@@ -7,7 +7,7 @@ permissions:
 jobs:
   build:
     name: "snapshots - ${{ matrix.build_env.target}}/${{ matrix.build_env.subtarget}} build"
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         build_env:
@@ -105,8 +105,8 @@ jobs:
       - name: Publish tag
         working-directory: ./awg-openwrt
         run: |
-          git config --global user.name 'DemonFromRussia'
-          git config --global user.email 'demonfromrussia@users.noreply.github.com'
+          git config user.name github-actions
+          git config user.email github-actions@github.com
           git add *.ipk
           git commit -am "${{ env.SNAPSHOT_COMMIT_SHA}}_${{ env.DEVICE_ARCH}}_${{ matrix.build_env.target}}_${{ matrix.build_env.subtarget}}"
           git tag "${{ env.SNAPSHOT_COMMIT_SHA}}_${{ env.DEVICE_ARCH}}_${{ matrix.build_env.target}}_${{ matrix.build_env.subtarget}}"
