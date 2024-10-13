@@ -25,7 +25,7 @@ jobs:
     steps:
       - name: Get device ARCH
         run: |
-          PROFILE_URL="https://downloads.openwrt.org/releases/${{ github.event.inputs.version}}/${{ github.event.inputs.target}}/${{ github.event.inputs.subtarget}}/profiles.json"
+          PROFILE_URL="https://downloads.openwrt.org/releases/${{ github.event.inputs.version}}/targets/${{ github.event.inputs.target}}/${{ github.event.inputs.subtarget}}/profiles.json"
 
           DEVICE_ARCH=$(wget -q $PROFILE_URL -O- | tr ',' '\n' | grep "arch_packages"| awk -F: '{print $2}' | tr -d '"')
           echo "Device ARCH: $DEVICE_ARCH"
